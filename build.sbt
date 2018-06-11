@@ -6,7 +6,7 @@ scalaVersion := "2.12.6"
 
 resolvers += "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
 
-val akkaVersion = "2.5.4"
+val akkaVersion = "2.5.13"
 val akkaHttpVersion = "10.0.11"
 
 libraryDependencies ++= {
@@ -22,6 +22,7 @@ libraryDependencies ++= {
     "org.json4s" %% "json4s-jackson" % "3.5.3",
     "org.mongodb.scala" %% "mongo-scala-driver" % "2.2.1",
     "io.netty" % "netty-all" % "4.1.24.Final",
-    "com.rabbitmq" % "amqp-client" % "5.2.0"
+    "com.rabbitmq" % "amqp-client" % "5.2.0",
+    "com.github.pathikrit"  %% "better-files-akka"  % "3.5.0"
   )
 }
