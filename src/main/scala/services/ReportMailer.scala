@@ -1,40 +1,28 @@
 package services
 
-import java.io.{File => JFile}
 import better.files._
 import courier.Defaults._
 import courier._
 import interfaces.ReportMail
-import javax.mail.internet.InternetAddress
 import monix.eval.Task
 
 trait ReportMailer {
 
-  def sendReport(mail: ReportMail)(implicit mailer: Mailer): Unit = { //TODO Refactor and make asynchronous
+  final def sendReport(mail: ReportMail)(implicit mailer: Mailer): Task[Unit] = { //TODO Refactor and minimize side effects, add file SALT and hashing SHA-256
 
-    val from: InternetAddress = new InternetAddress(mail.from)
-    val to: InternetAddress = new InternetAddress(mail.to)
-    val file: File = file"/User/johndoe/Documents/report.pdf"
-
-    for {
-      tempFile <- file.toTemporary
-    } bytesToFile(mail.attachment, tempFile)
-      .map(report =>
-        mailer(Envelope.from(from)
-        .to(to)
-        .subject(mail.subject)
-        .content(Multipart()
-          .attach(report)
-          .html(mail.body))).onComplete(_ => auditMessage(mail, true))
-      ).onErrorRestart(3L)
+    Task.eval {
+      for {
+        tempFile <- file"/User/johndoe/Documents/report.pdf".toTemporary
+      } mail.toEnvelope(tempFile)
+        .map(env =>
+          mailer(env)
+          .onComplete(_ => auditMessage(mail, true))
+        ).onErrorRestart(3L)
         .onErrorHandle(_ => auditMessage(mail, false))
+    }
   }
 
-  def bytesToFile(bytes : Array[Byte], report: File): Task[JFile] = {
-    Task(report.writeByteArray(bytes).toJava)
-  }
-
-  def auditMessage(mail: ReportMail, delivered: Boolean): ReportMail = {
+  def auditMessage(mail: ReportMail, delivered: Boolean): ReportMail = { //TODO separate into different service for auditing mails to mongodb
     if (delivered) {
       mail.copy(delivered = true)
     } else {

@@ -7,6 +7,8 @@ import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.write
 import handles.Monix.io
+import interfaces.ReportMail
+import services.ReportMailer
 
 import scala.util.{Failure, Success}
 
@@ -15,11 +17,13 @@ object Http {
   implicit val formats = Serialization.formats(NoTypeHints)
 
   val route: Route =
-    path("individual") {
-      get {
-        onComplete(Task.eval{}.runAsync) {
-//          case Success(res) => complete(write(res))
-          case Failure(err) => complete(err.getMessage)
+    path("report") {
+      post {
+        entity(as[ReportMail]) { request =>
+          onComplete(ReportMailer.sendReport(request).runAsync) {
+            case Success(res) => complete(write(res))
+            case Failure(err) => complete(err.getMessage)
+          }
         }
       }
     }
